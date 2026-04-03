@@ -23,10 +23,10 @@ There is no standard infrastructure layer for agent payments.
 
 **OWS-MPP Payment Agent** is a unified payment middleware that gives any AI agent:
 
-- ✅ A secure, locally-encrypted wallet via OWS
-- ✅ Policy-gated signing — every payment evaluated before execution
-- ✅ Automatic rail selection across three payment protocols
-- ✅ Tamper-proof onchain audit trail
+-  A secure, locally-encrypted wallet via OWS
+-  Policy-gated signing — every payment evaluated before execution
+-  Automatic rail selection across three payment protocols
+-  Tamper-proof onchain audit trail
 
 ***
 
