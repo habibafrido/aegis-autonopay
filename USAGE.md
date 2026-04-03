@@ -1,4 +1,4 @@
-# Usage Guide — OWS-MPP Payment Agent
+# Usage Guide — Aegis Autonopay Agent
 
 Complete installation and usage guide for developers.
 
@@ -108,7 +108,7 @@ npm run dev
 
 Expected output:
 ```
-🚀 OWS-MPP Agent running → http://localhost:3001
+🚀 Aegis Autonopay Agent running → http://localhost:3001
 ```
 
 The server is now ready to accept requests at `http://localhost:3001`.
@@ -368,7 +368,7 @@ npm run dev
 ## Project Structure
 
 ```
-ows-mpp-agent/
+Aegis-Autonopay-agent/
 ├── src/
 │   ├── agent/
 │   │   └── index.ts              # Main agent loop
