@@ -28,7 +28,7 @@ git --version
 
 ```bash
 git clone https://github.com/habibafrido/Aegis-Autonopay agent.git
-cd Aegis Autonopay
+cd Aegis-Autonopay
 ```
 
 ### Step 2 — Install Dependencies
@@ -135,7 +135,7 @@ curl http://localhost:3001/status
 **Response:**
 ```json
 {
-  "name": "Aegis Autonopay Payment Agent",
+  "name": "Aegis-Autonopay Payment Agent",
   "version": "1.0.0",
   "status": "ok",
   "rails": ["x402 (Base)", "mpp-charge (Tempo)", "mpp-session (Tempo)"],
