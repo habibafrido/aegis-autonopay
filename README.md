@@ -36,6 +36,32 @@ POST /pay
 └─────────────────────────────────────────────┘
 ```
 
+## HOW It WORKs
+POST /pay
+    │
+    ▼
+┌─────────────────────────────────────────────────┐
+│              Aegis Policy Engine                │
+│                                                 │
+│  dailySpent + amount > dailyCap?  → ❌ denied   │
+│  amount > spendLimitPerTx?        → ❌ denied   │
+│  amount >= approvalThreshold?     → ⚠️  queue   │
+│  recipient not in whitelist?      → ❌ denied   │
+│  all checks passed?               → ✅ approved │
+└──────────────────┬──────────────────────────────┘
+                   │ approved
+                   ▼
+┌─────────────────────────────────────────────────┐
+│            Autonopay Rail Router                │
+│                                                 │
+│  amount ≤ $10,  once       →  x402             │
+│  amount > $10,  once       →  mpp-charge       │
+│  frequency = "streaming"   →  mpp-session      │
+└──────────────────┬──────────────────────────────┘
+                   │
+                   ▼
+           AuditLogger → audit/ledger.jsonl
+
 ***
 
 ## Features
