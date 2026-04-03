@@ -37,6 +37,7 @@ POST /pay
 ```
 
 ## HOW It WORKs
+```
 POST /pay
     │
     ▼
@@ -61,7 +62,7 @@ POST /pay
                    │
                    ▼
            AuditLogger → audit/ledger.jsonl
-
+```
 ***
 
 ## Features
