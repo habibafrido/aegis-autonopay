@@ -28,7 +28,7 @@ git --version
 
 ```bash
 git clone https://github.com/habibafrido/ows-mpp-agent.git
-cd ows-mpp-agent
+cd Aegis Autonopay
 ```
 
 ### Step 2 — Install Dependencies
