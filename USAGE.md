@@ -27,7 +27,7 @@ git --version
 ### Step 1 — Clone the Repository
 
 ```bash
-git clone https://github.com/habibafrido/ows-mpp-agent.git
+git clone https://github.com/habibafrido/Aegis-Autonopay agent.git
 cd Aegis Autonopay
 ```
 
@@ -135,7 +135,7 @@ curl http://localhost:3001/status
 **Response:**
 ```json
 {
-  "name": "OWS-MPP Payment Agent",
+  "name": "Aegis Autonopay Payment Agent",
   "version": "1.0.0",
   "status": "ok",
   "rails": ["x402 (Base)", "mpp-charge (Tempo)", "mpp-session (Tempo)"],
