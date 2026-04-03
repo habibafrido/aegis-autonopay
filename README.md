@@ -69,8 +69,8 @@ Every transaction (approved, pending, denied) is appended to `audit/ledger.jsonl
 
 ### Install
 ```bash
-git clone https://github.com/your-username/ows-mpp-agent
-cd ows-mpp-agent
+git clone https://github.com/your-username/Aegis-Autonopay-agent
+cd Aegis-Autonopay-agent
 pnpm install
 ```
 
@@ -225,7 +225,7 @@ Invoke-RestMethod -Uri "http://localhost:3001/pay" -Method POST `
 ## Project Structure
 
 ```
-ows-mpp-agent/
+Aegis-Autonopay-agent/
 ├── src/
 │   ├── agent/
 │   │   ├── index.ts          # Core agent: policy → route → audit
