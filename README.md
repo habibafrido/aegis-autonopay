@@ -1,158 +1,275 @@
-# OWS-MPP Payment Agent
+# Aegis Autonopay 🤖
 
-> A policy-controlled payment infrastructure for autonomous AI agents — built on Open Wallet Standard (OWS), x402, and MPP.
-
-Built for **OWS Hackathon 2026** by MoonPay.
-
-***
-
-## The Problem
-
-AI agents increasingly need to pay for services — APIs, compute, data feeds, VPS servers. But today's implementations are broken:
-
-- Raw private keys stored in environment variables
-- No spending controls or policy enforcement
-- Fragmented payment flows with no standard interface
-- No audit trail for agent actions
-
-There is no standard infrastructure layer for agent payments.
+>A policy-governed autonomous payment agent built on the Open Wallet Standard (OWS).
+Aegis shields every transaction through a smart policy engine before routing payments across multiple rails — with human-in-the-loop approval for high-value transfers.
 
 ***
 
-## The Solution
+##  Hackathon Tracks
 
-**OWS-MPP Payment Agent** is a unified payment middleware that gives any AI agent:
-
--  A secure, locally-encrypted wallet via OWS
--  Policy-gated signing — every payment evaluated before execution
--  Automatic rail selection across three payment protocols
--  Tamper-proof onchain audit trail
+-  **Agent Spend Governance & Identity** — Policy engine with per-tx limits, daily caps, and approval thresholds
+-  **Pay-Per-Call Services & API Monetization** — HTTP 402 / x402 micropayment rail
+-  **Agentic Storefronts & Real-World Commerce** — Multi-rail autonomous payments (x402, MPP charge, MPP session)
 
 ***
 
-## How It Works
+## Architecture
 
 ```
-Agent Task
-    ↓
-OWS Policy Engine
-(spend limit / daily cap / whitelist / human approval)
-    ↓
-Payment Router
-    ↓
-┌───────────────┬───────────────┬──────────────────┐
-│  x402         │  MPP Charge   │  MPP Session      │
-│  Base         │  Tempo        │  Tempo            │
-│  ≤$10, once   │  >$10, once   │  streaming        │
-└───────────────┴───────────────┴──────────────────┘
-    ↓
-Onchain Audit Commit
+POST /pay
+    │
+    ▼
+┌─────────────────────────────────────────────┐
+│              Agent (index.ts)               │
+│                                             │
+│  1. PolicyEngine.evaluate()                 │
+│     ├── approved  → route payment           │
+│     ├── warn      → enqueue() → POST /approve│
+│     └── denied    → return null (402)       │
+│                                             │
+│  2. Router.route()                          │
+│     ├── amount ≤ $10  → x402 rail           │
+│     ├── amount > $10  → mpp-charge rail     │
+│     └── streaming     → mpp-session rail    │
+│                                             │
+│  3. AuditLogger.log() → audit/ledger.jsonl  │
+└─────────────────────────────────────────────┘
 ```
 
-The router selects the best rail automatically based on amount and frequency — no manual configuration per payment.
+***
+
+## Features
+
+### Policy Engine
+- **Per-transaction spend limit** — hard cap per payment
+- **Daily cap** — cumulative daily spend limit with auto-reset
+- **Human approval threshold** — amounts above threshold require manual approval
+- **Recipient whitelist** — optional allowlist of approved recipients
+
+### 🚦 Multi-Rail Payment Router
+| Rail | Trigger | Use Case |
+|------|---------|----------|
+| `x402` | amount ≤ $10, once | Micropayments, API pay-per-call |
+| `mpp-charge` | amount > $10, once | Larger one-shot payments |
+| `mpp-session` | frequency = "streaming" | Streaming / real-time payments |
+
+###  Human-in-the-Loop
+Payments that exceed the approval threshold are queued — not denied — and require explicit human approval via `POST /approve/:id`.
+
+###  Audit Ledger
+Every transaction (approved, pending, denied) is appended to `audit/ledger.jsonl` with full receipt trail.
 
 ***
 
-## How OWS Is Used
+## Quick Start
 
-OWS is the **foundation**, not an add-on:
+### Prerequisites
+- Node.js v20+
+- `pnpm` or `npm`
 
-| OWS Feature | How We Use It |
-|---|---|
-| Encrypted local keystore | All private keys stored locally — never touch the cloud |
-| Policy engine | Every payment evaluated before signing |
-| Agent access delegation | AI agent operates within defined boundaries |
-| CAIP-2 chain identifiers | Chain-agnostic: Base (`eip155:8453`) and Tempo (`eip155:19012`) |
-| `signAndSend` interface | Used for all onchain transaction execution |
+### Install
+```bash
+git clone https://github.com/your-username/ows-mpp-agent
+cd ows-mpp-agent
+pnpm install
+```
 
-***
+### Configure `.env`
+```env
+# OWS Wallet
+OWS_WALLET_PASSWORD=your_strong_password
+OWS_WALLET_PATH=./wallet.ows
 
-## Payment Rails
+# Chain RPCs
+BASE_RPC_URL=https://mainnet.base.org
+TEMPO_RPC_URL=https://rpc.tempo.xyz
 
-| Rail | Chain | Trigger | Best For |
-|------|-------|---------|----------|
-| **x402** | Base (`eip155:8453`) | amount ≤ $10, once | API calls, micropayments |
-| **MPP Charge** | Tempo (`eip155:19012`) | amount > $10, once | VPS, subscriptions, tools |
-| **MPP Session** | Tempo (`eip155:19012`) | frequency: streaming | Real-time feeds, continuous usage |
+# Policy (USD)
+AGENT_SPEND_LIMIT_PER_TX=100
+AGENT_DAILY_CAP=200
+HUMAN_APPROVAL_THRESHOLD=50
 
-***
+# Server
+PORT=3001
+```
 
-## Policy Engine
+### Run
+```bash
+pnpm dev
+```
 
-Four rules evaluated before every payment:
-
-1. **Per-tx spend limit** — reject if amount exceeds threshold
-2. **Daily cap** — reject if cumulative daily spend would exceed limit
-3. **Human approval threshold** — route to human approval queue if amount is high
-4. **Recipient whitelist** — reject if address not in approved list
-
-All configurable via `.env` — no code changes required.
-
-***
-
-## API
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/status` | Agent health + current policy config |
-| POST | `/pay` | Trigger a payment from the agent |
-| GET | `/audit` | Full transaction ledger with summary |
-| GET | `/pending` | Transactions awaiting human approval |
-| POST | `/approve/:id` | Approve a pending transaction |
-| POST | `/reject/:id` | Reject a pending transaction |
+Server starts at `http://localhost:3001`
 
 ***
 
-## Quick Demo
+## API Reference
+
+### `POST /pay`
+Submit a payment request to the agent.
+
+**Request body:**
+```json
+{
+  "amount": 2,
+  "recipient": "0xABC123",
+  "purpose": "Buy API credits",
+  "frequency": "once"
+}
+```
+
+**Responses:**
+| Status | Meaning |
+|--------|---------|
+| `200` | Payment approved and executed |
+| `402` | Payment denied or pending human approval |
+| `400` | Missing required fields |
+
+**200 Example:**
+```json
+{
+  "success": true,
+  "rail": "x402",
+  "receipt": "x402:1775221842906:2USDC",
+  "timestamp": 1775221842906
+}
+```
+
+***
+
+### `GET /approve`
+List all pending payments awaiting human approval.
+
+**Response:**
+```json
+{
+  "pending": [
+    {
+      "id": "pending_1775230302960_rct0p",
+      "req": { "amount": 55, "recipient": "0xABC123", "purpose": "Big payment" },
+      "reason": "Amount $55 requires human approval",
+      "createdAt": "2026-04-03T15:31:42.960Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+***
+
+### `POST /approve/:id`
+Approve a pending payment. The payment is executed immediately.
 
 ```bash
-# Start agent
-npm run dev
+curl -X POST http://localhost:3001/approve/pending_1775230302960_rct0p
+```
 
-# Micropayment → x402 on Base
-curl -X POST http://localhost:3001/pay \
-  -d '{"amount": 2, "recipient": "0x...", "purpose": "Buy API credits"}'
-# → { "rail": "x402", "receipt": "..." }
-
-# Large payment → MPP Charge on Tempo
-curl -X POST http://localhost:3001/pay \
-  -d '{"amount": 15, "recipient": "0x...", "purpose": "Buy VPS"}'
-# → { "rail": "mpp-charge", "txHash": "0x..." }
-
-# Streaming → MPP Session on Tempo
-curl -X POST http://localhost:3001/pay \
-  -d '{"amount": 0.001, "recipient": "0x...", "purpose": "Stream data", "frequency": "streaming"}'
-# → { "rail": "mpp-session", "sessionId": "..." }
+**Response:**
+```json
+{
+  "success": true,
+  "rail": "mpp-charge",
+  "txHash": "0x20a4fd0ef6524",
+  "receipt": "mpp-charge:1775230372685:55USDC",
+  "timestamp": 1775230372685
+}
 ```
 
 ***
 
-## Tech Stack
+### `POST /approve/:id/deny`
+Deny a pending payment.
 
-| Layer | Package |
-|-------|---------|
-| Wallet & Policy | `@ows/sdk` |
-| Micropayments | `x402-hono`, `@x402/fetch` |
-| MPP Payments | `mppx` |
-| HTTP Server | `hono`, `@hono/node-server` |
-| EVM Interaction | `viem` |
-| Config & Validation | `dotenv`, `zod` |
+```json
+{ "success": true, "message": "Payment denied" }
+```
 
 ***
 
-## Why This Matters
+## Demo Flow
 
-This project turns OWS from a wallet standard into a **complete agent payment infrastructure**. Any developer can drop this middleware into their AI agent stack and immediately have:
+```powershell
+# 1. Micropayment → x402 rail
+Invoke-RestMethod -Uri "http://localhost:3001/pay" -Method POST `
+  -ContentType "application/json" `
+  -Body '{"amount": 2, "recipient": "0xABC123", "purpose": "Buy API credits"}'
 
-- Controlled autonomous payments
-- Multi-rail support (Base + Tempo)
-- Policy enforcement out of the box
-- Full audit trail
+# 2. Large payment → mpp-charge rail
+Invoke-RestMethod -Uri "http://localhost:3001/pay" -Method POST `
+  -ContentType "application/json" `
+  -Body '{"amount": 15, "recipient": "0xABC123", "purpose": "Premium data feed"}'
 
-> See [USAGE.md](./USAGE.md) for full installation and usage guide.
+# 3. Streaming → mpp-session rail
+Invoke-RestMethod -Uri "http://localhost:3001/pay" -Method POST `
+  -ContentType "application/json" `
+  -Body '{"amount": 0.001, "recipient": "0xABC123", "purpose": "Streaming compute", "frequency": "streaming"}'
+
+# 4. Triggers human approval (amount >= threshold $50)
+Invoke-RestMethod -Uri "http://localhost:3001/pay" -Method POST `
+  -ContentType "application/json" `
+  -Body '{"amount": 55, "recipient": "0xABC123", "purpose": "Big payment"}'
+
+# 5. Check pending queue
+Invoke-RestMethod -Uri "http://localhost:3001/approve" -Method GET
+
+# 6. Approve (replace ID with actual from step 5)
+Invoke-RestMethod -Uri "http://localhost:3001/approve/pending_XXXX" -Method POST
+
+# 7. Policy hard deny (amount > spendLimitPerTx $100)
+Invoke-RestMethod -Uri "http://localhost:3001/pay" -Method POST `
+  -ContentType "application/json" `
+  -Body '{"amount": 105, "recipient": "0xABC123", "purpose": "Exceed limit test"}'
+```
+
+***
+
+## Project Structure
+
+```
+ows-mpp-agent/
+├── src/
+│   ├── agent/
+│   │   ├── index.ts          # Core agent: policy → route → audit
+│   │   └── queue.ts          # Human-in-the-loop pending queue
+│   ├── policy/
+│   │   └── engine.ts         # PolicyEngine: evaluate, recordSpend, getStats
+│   ├── payment/
+│   │   └── router.ts         # Rail selector: x402 / mpp-charge / mpp-session
+│   ├── audit/
+│   │   └── logger.ts         # AuditLogger: append to ledger.jsonl
+│   └── server/
+│       ├── index.ts          # Hono server entry
+│       └── routes/
+│           ├── pay.ts        # POST /pay
+│           └── approve.ts    # GET|POST /approve
+├── config/
+│   └── policy.ts             # getDefaultPolicy() from .env
+├── audit/
+│   └── ledger.jsonl          # Auto-generated audit trail
+├── .env.example
+└── README.md
+```
+
+***
+
+## Roadmap
+
+- [ ] Integrate `@x402/fetch` + OWS signer for real x402 payments
+- [ ] Integrate `mppx` for real MPP charge & session payments
+- [ ] Persistent queue (survive server restart)
+- [ ] WebSocket notifications for pending approvals
+- [ ] Multi-agent support (agent-to-agent payment delegation)
+
+***
+
+## Built With
+
+- [Hono](https://hono.dev) — lightweight web framework
+- [Open Wallet Standard (OWS)](https://openwallet.sh) — wallet & policy layer
+- [x402](https://x402.org) — HTTP 402 payment protocol
+- [TypeScript](https://www.typescriptlang.org) + Node.js v24
 
 ***
 
 ## License
 
-MIT — Built for OWS Hackathon 2026
+MIT
